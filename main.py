@@ -1,13 +1,16 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] ='3'
 from typing import Union
-import datetime
-from fastapi import FastAPI
+from datetime import datetime
+import pickle
+import io
+from fastapi import FastAPI,File,UploadFile
 import cv2
 import tensorflow as tf
 from tensorflow.keras.models import model_from_json
 import json
 import numpy as np
+import pendulum
 
 
 with open('./model_ai/class_name.json', 'r',encoding='utf8') as json_class:
@@ -19,13 +22,15 @@ with open('./model_ai/architecture.json', 'r') as json_file:
     model_j.load_weights('./model_ai/model.h5')
 
 app = FastAPI()
+orb = cv2.ORB_create(nfeatures=100) 
+bf = cv2.BFMatcher()
 
 
 @app.get("/")
 def read_root():
-    start_time=datetime.datetime.now()
+    start_time=datetime.now()
     data=ai()
-    end_time=datetime.datetime.now()
+    end_time=datetime.now()
     return {"result": data[0],
             "score":data[1],
             "time":end_time-start_time}
@@ -35,6 +40,14 @@ def read_root():
 def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
+@app.post("/files/")
+async def create_file(file: bytes = File(...)):
+    name= str(pendulum.now("Asia/Bangkok")).split('.')[0]
+    open("./images/"+name.replace(':','_')+".jpg","wb").write(file)
+
+
+
+   
 
 
 def ai():
